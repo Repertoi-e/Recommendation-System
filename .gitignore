@@ -1,0 +1,4 @@
+__pycache__/
+retail_rocket/
+.DS_Store
+cosine_sim.pkl

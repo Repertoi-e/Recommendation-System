@@ -1,0 +1,9 @@
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 142-370-059
+INFO:werkzeug: * Detected change in '/Users/soti/Dev/recommendation_system/collaborative_recommender.py', reloading
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 142-370-059
+INFO:root:Epoch 0: Loss = 2.8933166880307235
+INFO:root:Epoch 1: Loss = 0.4405327872263165
+INFO:root:Epoch 2: Loss = 0.2590691089395463
+INFO:root:Epoch 3: Loss = 0.19577122347678724
