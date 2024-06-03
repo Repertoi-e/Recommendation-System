@@ -61,7 +61,6 @@ def predict_interactivity(model, user_id, item_id, user_ids, item_ids):
 
 def recommend_future_items(user_id, user_history, user_ids, item_ids, num_recommendations=10):
     user_items = user_history[user_history.visitorid == user_id].itemid.to_list()
-    print(user_items)
     if not user_items or len(user_items) == 0:
         user_items = None
     else:

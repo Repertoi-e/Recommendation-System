@@ -1,0 +1,16 @@
+INFO:root:2024-06-03 14:07:20.146903: Train Epoch 0: Loss = 2.9902062397303544
+INFO:root:2024-06-03 14:07:21.620235: Train Epoch 1: Loss = 0.4819850435876471
+INFO:root:2024-06-03 14:07:23.062593: Train Epoch 2: Loss = 0.2682602663091787
+INFO:root:2024-06-03 14:07:24.605270: Train Epoch 3: Loss = 0.20532949151485924
+INFO:root:2024-06-03 14:07:24.815707: Test Epoch 0: Loss = 0.2211314116138965
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 142-370-059
+INFO:werkzeug:127.0.0.1 - - [03/Jun/2024 14:11:22] "POST /recommend HTTP/1.1" 200 -
+INFO:werkzeug: * Detected change in '/Users/soti/Dev/recommendation_system/deploy.py', reloading
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 142-370-059

@@ -11,6 +11,7 @@ import schedule
 import time
 
 import logging
+import datetime
 
 class InteractionDataset(Dataset):
     def __init__(self, interactions):
@@ -53,14 +54,16 @@ class RecommenderNet(nn.Module):
         x = self.fc3(x)
         return x.squeeze()
 
-logging.basicConfig(filename='recommender.log', level=logging.INFO)
+logging.basicConfig(filename='train.log', level=logging.INFO)
 
-def log_evaluation(loss, epoch):
-    s = f'Epoch {epoch}: Loss = {loss}'
+def log_evaluation(s, epoch, loss):
+    now = datetime.datetime.now()
+
+    s = f'{now}: {s} Epoch {epoch}: Loss = {loss}'
     print(s)
     logging.info(s)
 
-def train(model, train_loader, criterion, optimizer, epochs=4):
+def train_loop(model, train_loader, criterion, optimizer, epochs=4):
     model.train()
     for epoch in range(epochs):
         total_loss = 0
@@ -71,79 +74,62 @@ def train(model, train_loader, criterion, optimizer, epochs=4):
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
-        log_evaluation(total_loss/len(train_loader), epoch)
+        log_evaluation("Train", epoch=epoch, loss=total_loss/len(train_loader))
 
-# After adding new user_ids and new item_ids
-def retrain_model(interactions, user_ids, item_ids, epochs=5):
-    # Prepare the new dataset
-    train_data, test_data = train_test_split(interactions, test_size=0.2, random_state=42)
-    train_dataset = InteractionDataset(train_data)
-    test_dataset = InteractionDataset(test_data)
-    
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
-    
-    num_users = len(train_dataset.user_ids)
-    num_items = len(train_dataset.item_ids)
-
-    # Reinitialize the model
-    model = RecommenderNet(num_users, num_items)
-    criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
-
-    # Train the model
-    train(model, train_loader, criterion, optimizer, epochs)
-
-    return model
-
-if __name__ == '__main__':
-    # Data cleaned in the "Data Exploration and Cleaning.ipynb"
+def load_data_and_do_split():
     with open('events_df_cleaned.df', 'rb') as f:
         events = pickle.load(f)
-    interaction_matrix = events.pivot_table(index='visitorid', columns='itemid', values='event', aggfunc='count').fillna(0)
 
     event_type_mapping = {'view': 1, 'addtocart': 5, 'transaction': 10} # Give proportial weights to interactivity
     events['event'] = events['event'].map(event_type_mapping)
-
-    user_history = events.groupby('visitorid')['itemid'].agg(list).reset_index()
 
     train_data, test_data = train_test_split(events, test_size=0.2, random_state=42)
 
     train_dataset = InteractionDataset(train_data)
     test_dataset = InteractionDataset(test_data)
-
+    
     train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
     num_users = events['visitorid'].nunique()
     num_items = events['itemid'].nunique()
 
+    return train_loader, test_loader, num_users, num_items
+
+def evaluate(model, test_loader, criterion):
+    model.eval()
+    total_loss = 0
+    with torch.no_grad():
+        for user, item, rating in test_loader:
+            outputs = model(user, item)
+            loss = criterion(outputs, rating)
+            total_loss += loss.item()
+    log_evaluation(f'Test', epoch=0, loss=total_loss/len(test_loader))
+
+def train(epochs=5):
+    train_loader, test_loader, num_users, num_items = load_data_and_do_split() 
+
     model = RecommenderNet(num_users, num_items)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=0.01)
 
-    train(model, train_loader, criterion, optimizer)
+    train_loop(model, train_loader, criterion, optimizer)
 
-    def evaluate(model, test_loader, criterion):
-        model.eval()
-        total_loss = 0
-        with torch.no_grad():
-            for user, item, rating in test_loader:
-                outputs = model(user, item)
-                loss = criterion(outputs, rating)
-                total_loss += loss.item()
-        print(f'Test Loss: {total_loss/len(test_loader)}')
     evaluate(model, test_loader, criterion)
 
-    def save_model(model, path='recommender_model.pth'):
-        torch.save(model.state_dict(), path)
+    return model
 
-    save_model(model)
+def train_and_save():
+    model = train()
+    torch.save(model.state_dict(), 'recommender_model.pth')
 
-    print("Model saved to disk. Scheduling retrain at midnight everyday...")
+if __name__ == '__main__':
+    train_and_save()
+
+    print("Model trained and saved to disk. Scheduling retrain at midnight everyday...")
 
     # Schedule the retraining every day at midnight
-    schedule.every().day.at("00:00").do(retrain_model)
+    schedule.every().day.at("00:00").do(train_and_save)
 
     while True:
         schedule.run_pending()
